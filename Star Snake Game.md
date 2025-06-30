@@ -51,7 +51,7 @@ Centralized configuration object for easy customization:
 ```javascript
 const CONFIG = {
     GRID_SIZE: 20,
-    CANVAS_WIDTH: 600,
+    CANVAS_WIDTH: 1200,
     CANVAS_HEIGHT: 400,
     GAME_SPEED: 150,
     INITIAL_SNAKE_LENGTH: 3,

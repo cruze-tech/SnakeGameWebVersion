@@ -23,16 +23,16 @@
     "responsive",
     "star-theme"
   ],
-  "author": "Manus AI",
+  "author": "<cruze-tech>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/star-snake-game.git"
+    "url": "https://github.com/cruze-tech/SnakeGameWebVersion.git"
   },
   "bugs": {
-    "url": "https://github.com/your-username/star-snake-game/issues"
+    "url": "https://github.com/cruze-tech/SnakeGameWebVersion.git"
   },
-  "homepage": "https://your-username.github.io/star-snake-game",
+  "homepage": "https://github.com/cruze-tech/SnakeGameWebVersion.git",
   "engines": {
     "node": ">=12.0.0"
   },
