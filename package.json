@@ -1,0 +1,58 @@
+{
+  "name": "star-snake-game",
+  "version": "1.0.0",
+  "description": "A modern, polished web-based implementation of the classic Snake game with a star theme",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "serve": "npx http-server -p 8000",
+    "dev": "npx live-server --port=8000",
+    "build": "echo 'No build process required for static HTML/CSS/JS'",
+    "test": "echo 'Manual testing in browser required'",
+    "deploy": "echo 'Deploy index.html, game.js, and README.md to your web server'"
+  },
+  "keywords": [
+    "snake",
+    "game",
+    "html5",
+    "canvas",
+    "javascript",
+    "web-game",
+    "browser-game",
+    "mobile-friendly",
+    "responsive",
+    "star-theme"
+  ],
+  "author": "Manus AI",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/star-snake-game.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/star-snake-game/issues"
+  },
+  "homepage": "https://your-username.github.io/star-snake-game",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not ie <= 11"
+  ],
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "live-server": "^1.2.2"
+  },
+  "files": [
+    "index.html",
+    "game.js",
+    "README.md"
+  ],
+  "config": {
+    "port": 8000
+  }
+}
+

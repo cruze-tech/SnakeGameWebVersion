@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Snake Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+            overflow: hidden;
+        }
+
+        .game-container {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            position: relative;
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+
+        h1 {
+            margin: 0 0 20px 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        #gameCanvas {
+            border: 3px solid #FFD700;
+            border-radius: 10px;
+            background: #000;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            display: block;
+            margin: 0 auto;
+        }
+
+        .score-container {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .controls {
+            margin: 20px 0;
+            font-size: 1em;
+            opacity: 0.8;
+            line-height: 1.5;
+        }
+
+        .game-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid #FFD700;
+            min-width: 300px;
+            z-index: 100;
+        }
+
+        .game-screen h2 {
+            margin: 0 0 20px 0;
+            font-size: 2em;
+        }
+
+        .game-screen p {
+            margin: 10px 0;
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .start-btn, .restart-btn, .menu-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            min-width: 120px;
+        }
+
+        .restart-btn {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #000;
+        }
+
+        .menu-btn {
+            background: linear-gradient(45deg, #6c5ce7, #a29bfe);
+        }
+
+        .start-btn:hover, .restart-btn:hover, .menu-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-over h2 {
+            color: #FF6B6B;
+        }
+
+        .pause-screen h2 {
+            color: #FFA500;
+        }
+
+        .key-hint {
+            font-size: 0.9em;
+            opacity: 0.7;
+            margin-top: 20px;
+        }
+
+        .button-row {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 15px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            #gameCanvas {
+                width: 90vw;
+                height: 60vh;
+                max-width: 600px;
+                max-height: 400px;
+            }
+
+            .game-screen {
+                padding: 30px 20px;
+                min-width: 280px;
+                max-width: 90vw;
+            }
+
+            .score-container {
+                font-size: 1em;
+            }
+
+            .controls {
+                font-size: 0.9em;
+            }
+
+            .button-row {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .start-btn, .restart-btn, .menu-btn {
+                width: 200px;
+                margin: 5px 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .game-screen {
+                padding: 25px 15px;
+            }
+
+            .game-screen h2 {
+                font-size: 1.5em;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -60%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+
+        .game-screen {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Focus styles for accessibility */
+        .start-btn:focus, .restart-btn:focus, .menu-btn:focus {
+            outline: 2px solid #FFD700;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>⭐ Star Snake Game ⭐</h1>
+        <div class="score-container">
+            <div>Score: <span id="score">0</span></div>
+            <div>High Score: <span id="highScore">0</span></div>
+        </div>
+        <canvas id="gameCanvas" width="1200" height="400"></canvas>
+        <div class="controls">
+            <strong>Controls:</strong><br>
+            🎮 Arrow Keys or WASD to move<br>
+            ⏸️ SPACE to pause/resume<br>
+            🚪 ESC to pause/menu<br>
+            📱 Swipe on mobile devices
+        </div>
+        
+        <div id="startScreen" class="game-screen">
+            <h2>🐍 Welcome to Star Snake! 🐍</h2>
+            <p>Control your snake to eat the golden stars!</p>
+            <p>Avoid hitting the walls or yourself!</p>
+            <div class="button-row">
+                <button class="start-btn" onclick="startGame()">Start Game</button>
+            </div>
+            <div class="key-hint">Press SPACE to start</div>
+        </div>
+        
+        <div id="pauseScreen" class="game-screen" style="display: none;">
+            <h2>⏸️ Game Paused</h2>
+            <p>Take a break and come back when ready!</p>
+            <div class="button-row">
+                <button class="menu-btn" onclick="resumeGame()">Resume</button>
+                <button class="menu-btn" onclick="returnToMenu()">Main Menu</button>
+            </div>
+            <div class="key-hint">SPACE to resume • ESC for menu</div>
+        </div>
+        
+        <div id="gameOver" class="game-screen" style="display: none;">
+            <h2>Game Over!</h2>
+            <p>Your Score: <span id="finalScore">0</span></p>
+            <p>Better luck next time!</p>
+            <div class="button-row">
+                <button class="restart-btn" onclick="restartGame()">Play Again</button>
+                <button class="menu-btn" onclick="returnToMenu()">Main Menu</button>
+            </div>
+            <div class="key-hint">SPACE to restart</div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
+
