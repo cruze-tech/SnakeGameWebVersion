@@ -7,6 +7,7 @@ const gameOverScreen = document.getElementById('gameOver');
 const startScreen = document.getElementById('startScreen');
 const finalScoreElement = document.getElementById('finalScore');
 
+const orientationWarning = document.getElementById('orientation-warning');
 // Game constants
 const GRID_SIZE = 20;
 const CANVAS_WIDTH = 1200;
@@ -485,6 +486,32 @@ canvas.addEventListener('touchend', (e) => {
         changingDirection = true;
     }
 });
+
+// --- Screen Orientation Handling ---
+
+function checkOrientation() {
+    // This check is for mobile/tablet devices in portrait mode.
+    // We check if the orientation is portrait and if the screen width is typical for a mobile device.
+    const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+    const isMobile = window.innerWidth < 1024; // Target tablets and phones
+
+    if (isPortrait && isMobile) {
+        if (orientationWarning) orientationWarning.style.display = 'flex';
+        // If the game is running, pause it automatically to prevent playing in the wrong orientation.
+        if (gameRunning && !isPaused) {
+            pauseGame();
+        }
+    } else {
+        if (orientationWarning) orientationWarning.style.display = 'none';
+    }
+}
+
+// Add event listeners to check orientation on resize or orientation change
+window.addEventListener('resize', checkOrientation);
+window.addEventListener('orientationchange', checkOrientation);
+
+// Initial check when the page loads
+document.addEventListener('DOMContentLoaded', checkOrientation);
 
 // Initial draw
 draw();
