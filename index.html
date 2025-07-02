@@ -43,6 +43,16 @@
             position: relative;
             max-width: 90vw;
             max-height: 90vh;
+            overflow-y: auto; /* Allows scrolling */
+            overflow-x: hidden; /* Prevents horizontal scroll */
+
+            /* Hide scrollbar for Firefox and IE/Edge */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .game-container::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for Chrome/Safari/Opera */
         }
 
         h1 {
@@ -62,6 +72,8 @@
             box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
             display: block;
             margin: 0 auto;
+            width: 100%;
+            height: auto;
         }
 
         .score-container {
@@ -164,13 +176,6 @@
                 font-size: 2em;
             }
             
-            #gameCanvas {
-                width: 90vw;
-                height: 60vh;
-                max-width: 1200px;
-                max-height: 400px;
-            }
-
             .game-screen {
                 padding: 30px 20px;
                 min-width: 280px;
@@ -240,7 +245,7 @@
             🎮 Arrow Keys or WASD to move<br>
             ⏸️ SPACE to pause/resume<br>
             🚪 ESC to pause/menu<br>
-            📱 Swipe on mobile devices
+            📱 Swipe on the game screen to move
         </div>
         
         <div id="startScreen" class="game-screen">

@@ -19,9 +19,21 @@ let highScore = parseInt(localStorage.getItem('starSnakeHighScore')) || 0;
 let snake = [{ x: 10, y: 10 }];
 let direction = { x: 0, y: 0 };
 let food = { x: 15, y: 15 };
-let gameInterval;
+let gameLoopTimeout;
 let isPaused = false;
+let changingDirection = false;
 let pauseScreen = null;
+
+// Speed settings
+const INITIAL_SPEED = 200; // Slower start (higher is slower)
+const MIN_SPEED = 60; // Fastest speed (lower is faster)
+const SPEED_INCREMENT_SCORE = 10; // Increase speed every 10 points
+let currentGameSpeed = INITIAL_SPEED;
+
+// Audio for snake movement
+const hissSound = new Audio('Snake Hiss.wav');
+hissSound.loop = true;
+hissSound.volume = 0.4; // Adjust volume as needed
 
 // Initialize
 highScoreElement.textContent = highScore;
@@ -152,6 +164,9 @@ function draw() {
 function update() {
     if (!gameRunning || isPaused) return;
     
+    // Allow the direction to be changed for the next tick
+    changingDirection = false;
+
     // Calculate new head position
     const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
     
@@ -173,10 +188,15 @@ function update() {
     
     // Check food collision
     if (head.x === food.x && head.y === food.y) {
-        score += 10;
+        score += 1;
         scoreElement.textContent = score;
         generateFood();
         playEatSound();
+
+        // Increase speed as score goes up
+        if (score > 0 && score % SPEED_INCREMENT_SCORE === 0 && currentGameSpeed > MIN_SPEED) {
+            currentGameSpeed = Math.max(MIN_SPEED, currentGameSpeed - 5); // Decrease interval by 5ms
+        }
     } else {
         // Remove tail if no food eaten
         snake.pop();
@@ -186,7 +206,8 @@ function update() {
 // Game over
 function gameOver() {
     gameRunning = false;
-    clearInterval(gameInterval);
+    clearTimeout(gameLoopTimeout);
+    stopHissSound();
     
     playGameOverSound();
     
@@ -205,6 +226,10 @@ function startGame() {
     gameRunning = true;
     isPaused = false;
     score = 0;
+    changingDirection = false;
+
+    // Reset speed
+    currentGameSpeed = INITIAL_SPEED;
     scoreElement.textContent = score;
     
     // Reset snake with initial direction
@@ -218,14 +243,23 @@ function startGame() {
     hideAllScreens();
     
     // Start game loop
-    if (gameInterval) clearInterval(gameInterval);
-    gameInterval = setInterval(() => {
-        update();
-        draw();
-    }, 150);
+    if (gameLoopTimeout) clearTimeout(gameLoopTimeout);
+    gameLoop();
+    
+    playHissSound();
     
     // Initial draw
     draw();
+}
+
+// Main game loop
+function gameLoop() {
+    if (!gameRunning) return;
+
+    update();
+    draw();
+
+    gameLoopTimeout = setTimeout(gameLoop, currentGameSpeed);
 }
 
 // Pause game
@@ -233,21 +267,26 @@ function pauseGame() {
     if (!gameRunning) return;
     
     isPaused = true;
+    clearTimeout(gameLoopTimeout);
+    stopHissSound();
     if (!pauseScreen) createPauseScreen();
     pauseScreen.style.display = 'block';
 }
 
 // Resume game
 function resumeGame() {
+    playHissSound();
     isPaused = false;
     if (pauseScreen) pauseScreen.style.display = 'none';
+    gameLoop(); // Resume the loop
 }
 
 // Return to menu
 function returnToMenu() {
     gameRunning = false;
     isPaused = false;
-    clearInterval(gameInterval);
+    clearTimeout(gameLoopTimeout);
+    stopHissSound();
     hideAllScreens();
     startScreen.style.display = 'block';
 }
@@ -262,6 +301,22 @@ function hideAllScreens() {
     startScreen.style.display = 'none';
     gameOverScreen.style.display = 'none';
     if (pauseScreen) pauseScreen.style.display = 'none';
+}
+
+// Hiss sound controls
+function playHissSound() {
+    // The play() method returns a Promise which can be useful for handling errors
+    const playPromise = hissSound.play();
+    if (playPromise !== undefined) {
+        playPromise.catch(error => {
+            console.warn("Hiss sound could not be played automatically:", error);
+        });
+    }
+}
+
+function stopHissSound() {
+    hissSound.pause();
+    hissSound.currentTime = 0; // Rewind to the start for the next play
 }
 
 // Sound effects
@@ -337,25 +392,42 @@ document.addEventListener('keydown', (e) => {
     }
     
     // Movement controls
-    if (!gameRunning || isPaused) return;
+    if (!gameRunning || isPaused || changingDirection) return;
     
+    let newDirectionSet = false;
     switch (e.code) {
         case 'ArrowUp':
         case 'KeyW':
-            if (direction.y === 0) direction = { x: 0, y: -1 };
+            if (direction.y === 0) {
+                direction = { x: 0, y: -1 };
+                newDirectionSet = true;
+            }
             break;
         case 'ArrowDown':
         case 'KeyS':
-            if (direction.y === 0) direction = { x: 0, y: 1 };
+            if (direction.y === 0) {
+                direction = { x: 0, y: 1 };
+                newDirectionSet = true;
+            }
             break;
         case 'ArrowLeft':
         case 'KeyA':
-            if (direction.x === 0) direction = { x: -1, y: 0 };
+            if (direction.x === 0) {
+                direction = { x: -1, y: 0 };
+                newDirectionSet = true;
+            }
             break;
         case 'ArrowRight':
         case 'KeyD':
-            if (direction.x === 0) direction = { x: 1, y: 0 };
+            if (direction.x === 0) {
+                direction = { x: 1, y: 0 };
+                newDirectionSet = true;
+            }
             break;
+    }
+
+    if (newDirectionSet) {
+        changingDirection = true;
     }
 });
 
@@ -377,35 +449,42 @@ canvas.addEventListener('touchend', (e) => {
         return;
     }
     
-    if (isPaused) return;
+    if (isPaused || changingDirection) return;
     
     const touchEndX = e.changedTouches[0].clientX;
     const touchEndY = e.changedTouches[0].clientY;
     
     const deltaX = touchEndX - touchStartX;
     const deltaY = touchEndY - touchStartY;
-    
     const minSwipeDistance = 30;
-    
+    let newDirectionSet = false;
+
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
         if (Math.abs(deltaX) > minSwipeDistance) {
             if (deltaX > 0 && direction.x === 0) {
                 direction = { x: 1, y: 0 };
+                newDirectionSet = true;
             } else if (deltaX < 0 && direction.x === 0) {
                 direction = { x: -1, y: 0 };
+                newDirectionSet = true;
             }
         }
     } else {
         if (Math.abs(deltaY) > minSwipeDistance) {
             if (deltaY > 0 && direction.y === 0) {
                 direction = { x: 0, y: 1 };
+                newDirectionSet = true;
             } else if (deltaY < 0 && direction.y === 0) {
                 direction = { x: 0, y: -1 };
+                newDirectionSet = true;
             }
         }
+    }
+
+    if (newDirectionSet) {
+        changingDirection = true;
     }
 });
 
 // Initial draw
 draw();
-
