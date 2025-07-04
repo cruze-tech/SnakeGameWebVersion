@@ -9,7 +9,7 @@
     "dev": "npx live-server --port=8000",
     "build": "echo 'No build process required for static HTML/CSS/JS'",
     "test": "echo 'Manual testing in browser required'",
-    "deploy": "echo 'Deploy index.html, game.js, and README.md to your web server'"
+    "deploy": "echo 'Deploy index.html, game.js, Snake Hiss.wav, and README.md to your web server'"
   },
   "keywords": [
     "snake",
@@ -49,10 +49,10 @@
   "files": [
     "index.html",
     "game.js",
-    "README.md"
+    "README.md",
+    "Snake Hiss.wav"
   ],
   "config": {
     "port": 8000
   }
 }
-

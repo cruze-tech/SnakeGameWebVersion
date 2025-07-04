@@ -20,10 +20,20 @@ let highScore = parseInt(localStorage.getItem('starSnakeHighScore')) || 0;
 let snake = [{ x: 10, y: 10 }];
 let direction = { x: 0, y: 0 };
 let food = { x: 15, y: 15 };
-let gameLoopTimeout;
+let animationFrameId;
+let lastTime = 0;
+let elapsedTime = 0;
 let isPaused = false;
 let changingDirection = false;
 let pauseScreen = null;
+
+// Bonus Star variables
+let bonusStar = { x: -1, y: -1, active: false };
+let bonusStarInterval;
+let bonusStarTimeout;
+let pulseSize = 0;
+let pulseDirection = 1;
+
 
 // Speed settings
 const INITIAL_SPEED = 200; // Slower start (higher is slower)
@@ -67,6 +77,31 @@ function generateFood() {
         };
     } while (snake.some(segment => segment.x === food.x && segment.y === food.y));
 }
+
+// Generate a bonus star
+function spawnBonusStar() {
+    // Don't spawn if game isn't running, is paused, or a bonus star is already active
+    if (!gameRunning || isPaused || bonusStar.active) return;
+
+    // Try to find a position that is not on the snake or on the normal food
+    do {
+        bonusStar = {
+            x: Math.floor(Math.random() * (CANVAS_WIDTH / GRID_SIZE)),
+            y: Math.floor(Math.random() * (CANVAS_HEIGHT / GRID_SIZE)),
+            active: true
+        };
+    } while (
+        snake.some(segment => segment.x === bonusStar.x && segment.y === bonusStar.y) ||
+        (food.x === bonusStar.x && food.y === bonusStar.y)
+    );
+
+    // Set a timeout to make the star disappear after 10 seconds
+    if (bonusStarTimeout) clearTimeout(bonusStarTimeout);
+    bonusStarTimeout = setTimeout(() => {
+        bonusStar.active = false;
+    }, 10000);
+}
+
 
 // Draw star
 function drawStar(x, y, size, color) {
@@ -154,6 +189,19 @@ function draw() {
     
     // Draw food
     drawStar(food.x, food.y, 8, '#FFD700');
+
+    // Pulsing logic for bonus star
+    const baseSize = 10; // 25% bigger than normal star's 8
+    const pulseRange = 2; // How much it grows/shrinks
+    pulseSize += 0.1 * pulseDirection;
+    if (pulseSize > pulseRange || pulseSize < -pulseRange) {
+        pulseDirection *= -1; // Reverse direction
+    }
+
+    // Draw bonus star if active
+    if (bonusStar.active) {
+        drawStar(bonusStar.x, bonusStar.y, baseSize + pulseSize, '#FF6347'); // Tomato color
+    }
     
     // Draw snake
     snake.forEach((segment, index) => {
@@ -161,10 +209,8 @@ function draw() {
     });
 }
 
-// Update game
+// Update game state
 function update() {
-    if (!gameRunning || isPaused) return;
-    
     // Allow the direction to be changed for the next tick
     changingDirection = false;
 
@@ -187,8 +233,18 @@ function update() {
     // Add new head
     snake.unshift(head);
     
-    // Check food collision
-    if (head.x === food.x && head.y === food.y) {
+    // Check for food collision by storing results in boolean flags for clarity
+    const ateBonusStar = bonusStar.active && head.x === bonusStar.x && head.y === bonusStar.y;
+    const ateRegularFood = head.x === food.x && head.y === food.y;
+
+    if (ateBonusStar) {
+        score += 10;
+        scoreElement.textContent = score;
+        bonusStar.active = false;
+        clearTimeout(bonusStarTimeout); // Star was eaten, so clear the timeout
+        playEatSound();
+        // Snake grows, so we don't pop the tail.
+    } else if (ateRegularFood) {
         score += 1;
         scoreElement.textContent = score;
         generateFood();
@@ -196,8 +252,9 @@ function update() {
 
         // Increase speed as score goes up
         if (score > 0 && score % SPEED_INCREMENT_SCORE === 0 && currentGameSpeed > MIN_SPEED) {
-            currentGameSpeed = Math.max(MIN_SPEED, currentGameSpeed - 5); // Decrease interval by 5ms
+            currentGameSpeed = Math.max(MIN_SPEED, currentGameSpeed - 5);
         }
+        // Snake grows, so we don't pop the tail.
     } else {
         // Remove tail if no food eaten
         snake.pop();
@@ -207,7 +264,9 @@ function update() {
 // Game over
 function gameOver() {
     gameRunning = false;
-    clearTimeout(gameLoopTimeout);
+    cancelAnimationFrame(animationFrameId);
+    clearInterval(bonusStarInterval);
+    clearTimeout(bonusStarTimeout);
     stopHissSound();
     
     playGameOverSound();
@@ -229,6 +288,12 @@ function startGame() {
     score = 0;
     changingDirection = false;
 
+    // Reset bonus star
+    bonusStar.active = false;
+    if (bonusStarInterval) clearInterval(bonusStarInterval);
+    if (bonusStarTimeout) clearTimeout(bonusStarTimeout);
+    bonusStarInterval = setInterval(spawnBonusStar, 15000); // Spawn every 15 seconds
+
     // Reset speed
     currentGameSpeed = INITIAL_SPEED;
     scoreElement.textContent = score;
@@ -243,32 +308,51 @@ function startGame() {
     // Hide all screens
     hideAllScreens();
     
+    // Reset timer variables for game loop
+    lastTime = performance.now();
+    elapsedTime = 0;
+    
     // Start game loop
-    if (gameLoopTimeout) clearTimeout(gameLoopTimeout);
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
     gameLoop();
     
     playHissSound();
-    
-    // Initial draw
-    draw();
 }
 
-// Main game loop
-function gameLoop() {
+// Main game loop using requestAnimationFrame for smoothness
+function gameLoop(currentTime = 0) {
     if (!gameRunning) return;
 
-    update();
-    draw();
+    // Request the next frame
+    animationFrameId = requestAnimationFrame(gameLoop);
 
-    gameLoopTimeout = setTimeout(gameLoop, currentGameSpeed);
+    // If paused, we skip the logic but keep the loop running for animations
+    if (isPaused) {
+        lastTime = currentTime; // Update time to prevent jump on resume
+        return;
+    }
+
+    // Calculate time delta to control game speed independently of framerate
+    const deltaTime = currentTime - lastTime;
+    lastTime = currentTime;
+    elapsedTime += deltaTime;
+
+    // If enough time has passed, update the game state
+    if (elapsedTime >= currentGameSpeed) {
+        update();
+        // Subtract the interval to carry over any excess time, preventing drift
+        elapsedTime -= currentGameSpeed;
+    }
+    
+    // Draw on every frame for smooth animations like the pulsing star
+    draw();
 }
 
 // Pause game
 function pauseGame() {
-    if (!gameRunning) return;
+    if (!gameRunning || isPaused) return;
     
     isPaused = true;
-    clearTimeout(gameLoopTimeout);
     stopHissSound();
     if (!pauseScreen) createPauseScreen();
     pauseScreen.style.display = 'block';
@@ -276,17 +360,22 @@ function pauseGame() {
 
 // Resume game
 function resumeGame() {
+    if (!gameRunning || !isPaused) return;
+
     playHissSound();
     isPaused = false;
     if (pauseScreen) pauseScreen.style.display = 'none';
-    gameLoop(); // Resume the loop
+    // Reset lastTime to avoid a large deltaTime jump after unpausing
+    lastTime = performance.now();
 }
 
 // Return to menu
 function returnToMenu() {
     gameRunning = false;
     isPaused = false;
-    clearTimeout(gameLoopTimeout);
+    cancelAnimationFrame(animationFrameId);
+    clearInterval(bonusStarInterval);
+    clearTimeout(bonusStarTimeout);
     stopHissSound();
     hideAllScreens();
     startScreen.style.display = 'block';
@@ -306,7 +395,6 @@ function hideAllScreens() {
 
 // Hiss sound controls
 function playHissSound() {
-    // The play() method returns a Promise which can be useful for handling errors
     const playPromise = hissSound.play();
     if (playPromise !== undefined) {
         playPromise.catch(error => {
@@ -317,7 +405,7 @@ function playHissSound() {
 
 function stopHissSound() {
     hissSound.pause();
-    hissSound.currentTime = 0; // Rewind to the start for the next play
+    hissSound.currentTime = 0;
 }
 
 // Sound effects
@@ -490,14 +578,11 @@ canvas.addEventListener('touchend', (e) => {
 // --- Screen Orientation Handling ---
 
 function checkOrientation() {
-    // This check is for mobile/tablet devices in portrait mode.
-    // We check if the orientation is portrait and if the screen width is typical for a mobile device.
     const isPortrait = window.matchMedia("(orientation: portrait)").matches;
-    const isMobile = window.innerWidth < 1024; // Target tablets and phones
+    const isMobile = window.innerWidth < 1024;
 
     if (isPortrait && isMobile) {
         if (orientationWarning) orientationWarning.style.display = 'flex';
-        // If the game is running, pause it automatically to prevent playing in the wrong orientation.
         if (gameRunning && !isPaused) {
             pauseGame();
         }
