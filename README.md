@@ -275,5 +275,5 @@ This project is **open source** and available under the [MIT License](https://op
 
 **Enjoy playing Star Snake Game\!** 🐍⭐
 
-**Repository:** [https://github.com/cruze-tech/SnakeGameWebVersion](https://github.com/cruze-tech/SnakeGameWebVersion.git)
+**Link:** (https://cruze-tech.github.io/SnakeGameWebVersion/)
 
