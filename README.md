@@ -1,6 +1,6 @@
 # ⭐ Star Snake Game ⭐
 
-## 🐍 A Modern, SEO-Friendly Web-Based Snake Game for Endless Fun! 🎮
+## 🐍 A Modern, Friendly Web-Based Snake Game for Endless Fun! 🎮
 
 Welcome to **Star Snake Game**, a highly optimized and engaging web-based implementation of the timeless classic Snake game, infused with a captivating star theme. This project is meticulously crafted with vanilla JavaScript, HTML5 Canvas, and CSS3, ensuring **optimal performance**, **broad compatibility**, and a **smooth user experience** across all devices. Get ready for an **addictive gameplay experience** that combines nostalgic charm with modern web technologies.
 
